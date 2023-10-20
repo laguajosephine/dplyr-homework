@@ -1,0 +1,15 @@
+---
+title: "Dplyr Homework"
+author: "Joséphine Laguardia"
+format: html
+---
+
+```{r configuration}
+#| message: false
+here::i_am("dplyr_homework.Rproj")
+library(here)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
