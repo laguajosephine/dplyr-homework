@@ -2,6 +2,9 @@
 title: "Dplyr Homework"
 author: "Joséphine Laguardia"
 format: html
+message: false
+code-fold: true
+echo: false
 ---
 
 ```{r configuration}
@@ -13,3 +16,146 @@ library(dplyr)
 library(tidyr)
 ```
 
+# Exercise 1
+
+```{r loading the data set}
+topspotify <- readRDS("top-spotify-songs-from-20102019-by-year.Rds")
+```
+
+## Question 1
+
+```{r question 1.1}
+n_songs <- NROW(topspotify %>% distinct(title))
+n_artists <- NROW(topspotify %>% distinct(artist))
+n_genre <- NROW(topspotify %>% distinct(`top genre`))
+```
+
+The data set contains `r n_songs` songs, `r n_artists` artists and `r n_genre` different genres.
+
+## Question 2
+
+Here is the number of songs per year, between 2010 and 2019.
+```{r question 1.2}
+songs_per_year <- topspotify |>
+  distinct(title, .keep_all = TRUE) |>
+  group_by(year) |>
+  summarise(n())
+knitr::kable(songs_per_year,format="html", col.names= c("Year", "Number of songs" ))
+```
+
+## Question 3
+
+```{r question 1.3}
+songs_per_artist <- topspotify |>
+  distinct(title, .keep_all = TRUE) |>
+  group_by(artist) |>
+  summarise(n())
+```
+
+The most popular artist between 2010 and 2019 is `r songs_per_artist[which(songs_per_artist[2] == max(songs_per_artist[2])),1]` , with `r max(songs_per_artist[2])` songs.
+
+## Question 4
+
+In the following table, we can see the minimum, maximum, mean and median of BPM, and the number of songs for each musical genre. 
+
+```{r question 1.4}
+info_per_genre <- topspotify |>
+  distinct(title, .keep_all = TRUE) |>
+  group_by(`top genre`) |>
+  summarise(min(bpm), max(bpm), mean(bpm), median(bpm), n())
+knitr::kable(info_per_genre,format="html", col.names= c("Musical Genre", "Minimum of BPM", "Maximum of BPM","Mean of BPM","Median of BPM", "Number of songs" ))
+```
+
+## Question 5
+
+In this table, we can see the median of the variables energy and danceability through the years.
+
+```{r question 1.5}
+info_per_year <- topspotify |>
+  distinct(title, .keep_all = TRUE) |>
+  group_by(year) |>
+  summarise(median_energy = median(nrgy), median_dnce = median(dnce))
+            
+knitr::kable(info_per_year,format="html", col.names= c("Year", "Median Energy", "Median Danceability" ))
+```
+
+## Question 6
+
+Here is a graph presenting the temporal evolution of energy and danceability of songs.
+```{r question 1.6}
+info_per_year = rename(info_per_year, "Danceability median" = "median_dnce", "Energy median"="median_energy")
+long_info <- 
+  info_per_year |> pivot_longer(-year, names_to = "Variables", values_to = "Values")
+ggplot(long_info, aes(x= year, y= Values, color= Variables))+
+  geom_line()
+```
+
+# Exercise 2
+
+```{r data loading}
+dropout <- readRDS("dropout.Rds")
+```
+
+## Question 1
+
+Here is the median age of enrollment conditioned on gender and marital status of the students. 
+
+```{r question 2.1}
+#| message: false
+median_age <- dropout |>
+  group_by(Gender, `Marital status`) |>
+  summarise(var_median = median(`Age at enrollment`))
+knitr::kable(median_age, col.names = c("Gender", "Marital status", "Median age of enrollment"))
+```
+
+## Question 2
+
+Here is a better representation.
+```{r question 2.2}
+wider_median_age <- 
+  median_age |> pivot_wider(names_from = Gender, values_from = var_median )
+knitr::kable(wider_median_age)
+```
+
+## Question 3
+
+Here is the conditional mean of all variables related to curricular units given the value of the Target variable (dropout, graduate and enrolled).
+
+```{r question 2.3}
+conditional_mean <- dropout |>
+  group_by(Target) |>
+  summarise(mean_1 = mean(`Curricular units 1st sem (approved)`),
+            mean_2 = mean(`Curricular units 1st sem (credited)`),
+            mean_3 = mean(`Curricular units 1st sem (enrolled)`),
+            mean_4 = mean(`Curricular units 1st sem (evaluations)`),
+            mean_5 = mean(`Curricular units 1st sem (grade)`),
+            mean_6 = mean(`Curricular units 1st sem (without evaluations)`),
+            mean_7 = mean(`Curricular units 2nd sem (approved)`),
+            mean_8 = mean(`Curricular units 2nd sem (credited)`),
+            mean_9 = mean(`Curricular units 2nd sem (enrolled)`), 
+            mean_10 = mean(`Curricular units 2nd sem (evaluations)`), 
+            mean_11 = mean(`Curricular units 2nd sem (grade)`), 
+            mean_12 = mean(`Curricular units 2nd sem (without evaluations)`))
+conditional_mean = rename(conditional_mean, "Curricular units 1st sem (approved)"= "mean_1",
+                          "Curricular units 1st sem (credited)"= "mean_2", 
+                          "Curricular units 1st sem (enrolled)" = "mean_3", 
+                          "Curricular units 1st sem (evaluations)" = "mean_4", 
+                          "Curricular units 1st sem (grade)" = "mean_5",
+                          "Curricular units 1st sem (without evaluations)" = "mean_6", 
+                          "Curricular units 2nd sem (approved)" = "mean_7",
+                          "Curricular units 2nd sem (credited)" = "mean_8",
+                          "Curricular units 2nd sem (enrolled)" = "mean_9",
+                          "Curricular units 2nd sem (evaluations)" = "mean_10",
+                          "Curricular units 2nd sem (grade)" = "mean_11",
+                          "Curricular units 2nd sem (without evaluations)" = "mean_12")
+knitr::kable(conditional_mean)
+```
+
+## Question 4
+
+Here is a better representation.
+```{r question 2.4}
+knitr::kable(conditional_mean |>
+  pivot_longer(-Target, names_to="Units", values_to = "Value") |>
+  pivot_wider(names_from=Target, values_from = Value))
+```
